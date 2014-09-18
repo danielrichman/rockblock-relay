@@ -1,0 +1,8 @@
+database: rockblock-relay
+auth:
+    100123456123123:
+        username: user
+        password: pass
+repeat:
+    300234010753370:
+      - 100123456123123

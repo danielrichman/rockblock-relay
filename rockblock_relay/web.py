@@ -11,14 +11,18 @@ from psycopg2.extras import RealDictCursor
 
 import raven.flask_glue
 
+from .config import config
+
+
 app = Flask(__name__)
 app.secret_key = os.urandom(16)
 auth_decorator = raven.flask_glue.AuthDecorator(desc="Rockblock Relay")
 
+
 def connection():
     assert flask.has_request_context()
     if not hasattr(g, '_database'):
-        g._database = psycopg2.connect(dbname='rockblock-relay')
+        g._database = psycopg2.connect(dbname=config["database"])
     return g._database
 
 def cursor():
@@ -76,4 +80,4 @@ def rockblock_incoming():
     return "OK"
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
