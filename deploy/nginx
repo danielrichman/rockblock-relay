@@ -1,0 +1,10 @@
+    location /rockblock-relay/ {
+        include uwsgi_params;
+        uwsgi_param SCRIPT_NAME /rockblock-relay;
+        uwsgi_modifier1 30;
+        uwsgi_pass unix:/run/www-sockets/rockblock-relay.sock;
+    }
+
+    location /rockblock-relay/static/ {
+        alias /opt/rockblock-relay/rockblock_relay/static/;
+    }

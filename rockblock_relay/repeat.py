@@ -3,8 +3,10 @@ import urllib.parse
 import http.client
 import ssl
 
-from .config import config
+from .config import config, need_auth
 from .listen import listen
+
+need_auth()
 
 ssl_context = ssl.create_default_context()
 # XXX TLSv1 connections seem to fail!

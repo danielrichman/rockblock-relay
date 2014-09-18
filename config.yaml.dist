@@ -2,10 +2,6 @@ database: rockblock-relay
 imei:
     rocket: 300234010753370
     mission_control: 100123456123123
-auth:
-    mission_control:
-        username: user
-        password: pass
 repeat:
     rocket:
       - mission_control
@@ -13,4 +9,4 @@ irc:
     host: irc.host
     port: 6667
     channel: '#cusf'
-    nickname: Rockblock
+    nickname: RockBLOCK

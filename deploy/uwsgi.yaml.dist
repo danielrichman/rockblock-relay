@@ -1,0 +1,5 @@
+uwsgi:
+    socket: /run/www-sockets/rockblock-relay.sock
+    virtualenv: /opt/rockblock-relay/venv
+    chdir: /opt/rockblock-relay
+    wsgi-file: deploy/rockblock_relay.wsgi
