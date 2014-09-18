@@ -6,9 +6,6 @@ import ssl
 from .config import config
 from .listen import listen
 
-repeat_config = config.get("repeat", {})
-auth_config = config.get("auth", {})
-
 ssl_context = ssl.create_default_context()
 # XXX TLSv1 connections seem to fail!
 ssl_context.options |= ssl.OP_NO_TLSv1
@@ -17,10 +14,17 @@ ssl_context.options &= ~ssl.OP_NO_SSLv3
 class SubmitMessageError(Exception): pass
 
 def callback(message):
-    for target in repeat_config.get(message["source"], []):
-        auth = auth_config[target]
+    source = message["imei"]
+    if source not in config["imei_reverse"]:
+        return
+
+    source = config["imei_reverse"][source]
+    targets = config["repeat"].get(source, [])
+
+    for target in targets:
+        auth = config["auth"][target]
         post = {
-            "imei": str(target),
+            "imei": str(config["imei"][target]),
             "username": auth["username"],
             "password": auth["password"],
             "data": base64.b16encode(message["data"])

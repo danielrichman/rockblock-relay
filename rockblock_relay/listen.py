@@ -1,5 +1,7 @@
+import sys
 import select
 import psycopg2
+import traceback
 from psycopg2.extras import RealDictCursor
 
 def listen(callback):
@@ -24,7 +26,19 @@ def listen(callback):
             cur.execute("SELECT * FROM messages WHERE id = %s", (id, ))
             row = cur.fetchone()
 
-            callback(row)
+            if row is not None:
+                try:
+                    callback(row)
+                except KeyboardInterrupt:
+                    raise
+                except SystemExit:
+                    raise
+                except:
+                    print("Exception while handling", id, file=sys.stderr)
+                    traceback.print_exc()
+            else:
+                print("Failed to get row", id, file=sys.stderr)
+
 
 def main():
     listen(print)

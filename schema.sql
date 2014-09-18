@@ -1,6 +1,6 @@
 CREATE TABLE messages (
     id serial primary key,
-    source bigint not null,
+    imei bigint not null,
     momsn integer not null,
     transmitted timestamp not null,
     latitude double precision not null,

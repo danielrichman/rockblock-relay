@@ -1,8 +1,6 @@
 import os
 from datetime import datetime
-import re
 import base64
-import textwrap
 
 import flask
 import psycopg2
@@ -12,11 +10,12 @@ from psycopg2.extras import RealDictCursor
 import raven.flask_glue
 
 from .config import config
+from . import util
 
 
 app = Flask(__name__)
 app.secret_key = os.urandom(16)
-auth_decorator = raven.flask_glue.AuthDecorator(desc="Rockblock Relay")
+auth_decorator = raven.flask_glue.AuthDecorator(desc="RockBLOCK Relay")
 
 
 def connection():
@@ -36,14 +35,13 @@ def close_db_connection(exception):
         finally:
             g._database.close()
 
-printable_re = re.compile(b"^[\\x20-\\x7E]+$")
 
-@app.template_filter('plain_or_hex')
-def plain_or_hex(s):
-    if printable_re.match(s):
-        return bytes(s).decode("ascii")
-    else:
-        return textwrap.fill(base64.b16encode(s).decode("ascii"))
+app.add_template_filter('plain_or_hex', util.plain_or_hex)
+
+@app.template_filter('source_name')
+def source_name(imei):
+    return config["imei_reverse"].get(imei, imei)
+
 
 @app.route('/')
 @auth_decorator
@@ -58,14 +56,14 @@ def list():
 def rockblock_incoming():
     query = """
     INSERT INTO messages
-    (source, momsn, transmitted, latitude, longitude, latlng_cep, data)
+    (imei, momsn, transmitted, latitude, longitude, latlng_cep, data)
     VALUES
-    (%(source)s, %(momsn)s, %(transmitted)s, %(latitude)s, %(longitude)s,
+    (%(imei)s, %(momsn)s, %(transmitted)s, %(latitude)s, %(longitude)s,
      %(latlng_cep)s, %(data)s)
     """
 
     args = {
-        "source": int(request.form["imei"]),
+        "imei": int(request.form["imei"]),
         "momsn": int(request.form["momsn"]),
         "transmitted": datetime.strptime(request.form["transmit_time"], "%y-%m-%d %H:%M:%S"),
         "latitude": float(request.form["iridium_latitude"]),
@@ -79,5 +77,6 @@ def rockblock_incoming():
 
     return "OK"
 
+
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True, use_reloader=False)
