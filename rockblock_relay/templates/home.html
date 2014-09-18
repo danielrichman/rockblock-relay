@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<table class='table table-condensed' id="messages">
+    <thead>
+        <tr>
+            <th rowspan='2' class='id'>ID</th>
+            <th>Source IMEI</th>
+            <th>MOMSN</th>
+            <th>Sent</th>
+            <th>Iridium Lat</th>
+            <th>Iridium Lon</th>
+            <th>Iridium CEP</th>
+        </tr>
+        <tr>
+            <th colspan='6'>Data</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for message in messages %}
+        <tr>
+            <td rowspan='2' class='id'>{{ message.id }}</td>
+            <td>{{ message.source }}</td>
+            <td>{{ message.momsn }}</td>
+            <td>{{ message.transmitted }}</td>
+            <td>{{ message.latitude }}</td>
+            <td>{{ message.longitude }}</td>
+            <td>{{ message.latlng_cep }}</td>
+        </tr>
+        <tr>
+            <td colspan='6' class='data'>{{ message.data|plain_or_hex }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

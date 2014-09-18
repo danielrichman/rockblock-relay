@@ -1,16 +1,24 @@
+import os
 from datetime import datetime
-from flask import Flask, g, request
+import re
+import base64
+import textwrap
+
+import flask
 import psycopg2
+from flask import Flask, g, request, render_template
 from psycopg2.extras import RealDictCursor
+
 import raven.flask_glue
 
 app = Flask(__name__)
-auth_decorator = AuthDecorator(desc="Rockblock Relay")
+app.secret_key = os.urandom(16)
+auth_decorator = raven.flask_glue.AuthDecorator(desc="Rockblock Relay")
 
 def connection():
     assert flask.has_request_context()
     if not hasattr(g, '_database'):
-        g._database = psycopg2.connect(app.config["POSTGRES"])
+        g._database = psycopg2.connect(dbname='rockblock-relay')
     return g._database
 
 def cursor():
@@ -24,18 +32,31 @@ def close_db_connection(exception):
         finally:
             g._database.close()
 
+printable_re = re.compile(b"^[\\x20-\\x7E]+$")
+
+@app.template_filter('plain_or_hex')
+def plain_or_hex(s):
+    if printable_re.match(s):
+        return bytes(s).decode("ascii")
+    else:
+        return textwrap.fill(base64.b16encode(s).decode("ascii"))
+
 @app.route('/')
 @auth_decorator
 def list():
-    return 'Hello World!'
+    with cursor() as cur:
+        cur.execute("SELECT * FROM messages ORDER BY id")
+        messages = cur.fetchall()
 
-@app.route('/rockblock-incoming')
+    return render_template("home.html", messages=messages)
+
+@app.route('/rockblock-incoming', methods=["POST"])
 def rockblock_incoming():
     query = """
     INSERT INTO messages
     (source, momsn, transmitted, latitude, longitude, latlng_cep, data)
     VALUES
-    (%(imei)s, %(momsn)s, %(transmitted)s, %(latitude)s, %(longitude)s
+    (%(source)s, %(momsn)s, %(transmitted)s, %(latitude)s, %(longitude)s,
      %(latlng_cep)s, %(data)s)
     """
 
@@ -52,5 +73,7 @@ def rockblock_incoming():
     with cursor() as cur:
         cur.execute(query, args)
 
+    return "OK"
+
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
