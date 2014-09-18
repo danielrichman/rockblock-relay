@@ -36,7 +36,7 @@ def close_db_connection(exception):
             g._database.close()
 
 
-app.add_template_filter('plain_or_hex', util.plain_or_hex)
+app.jinja_env.filters["plain_or_hex"] = util.plain_or_hex
 
 @app.template_filter('source_name')
 def source_name(imei):
@@ -76,7 +76,6 @@ def rockblock_incoming():
         cur.execute(query, args)
 
     return "OK"
-
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)
