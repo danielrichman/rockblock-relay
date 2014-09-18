@@ -84,8 +84,14 @@ class Thread(threading.Thread):
 def main():
     bot = Bot(**config["irc"])
 
-    def cb(msg): bot.broadcast(message_to_line(msg))
-    def listen2(): listen(cb)
+    def cb(msg):
+        if msg["data"] == b"":
+            return
+
+        bot.broadcast(message_to_line(msg))
+
+    def listen2():
+        listen(cb)
 
     Thread(target=bot.start, daemon=True).start()
     Thread(target=listen2, daemon=True).start()

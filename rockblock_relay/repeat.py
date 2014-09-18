@@ -3,6 +3,9 @@ from .listen import listen
 from .push import push
 
 def callback(message):
+    if message["data"] == b"":
+        return
+
     source = message["imei"]
     if source not in config["imei_reverse"]:
         return

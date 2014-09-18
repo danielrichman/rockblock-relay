@@ -8,6 +8,9 @@ from .config import config
 from .listen import listen
 
 def callback(msg):
+    if msg["data"] == b"":
+        return
+
     source = config["imei_reverse"].get(msg["imei"], "unknown")
     data = plain_or_hex(msg["data"])
     body = "\n".join(["RockBLOCK", source, data])
