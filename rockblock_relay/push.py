@@ -29,7 +29,6 @@ def push(target, data):
         "Content-type": "application/x-www-form-urlencoded",
         "Accept": "text/plain"
     }
-    print(body)
     conn = http.client.HTTPSConnection("secure.rock7mobile.com", 443, context=ssl_context)
     conn.request("POST", "/rockblock/MT", body, headers)
     response = conn.getresponse().read()
