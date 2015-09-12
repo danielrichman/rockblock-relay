@@ -67,7 +67,7 @@ class Bot(irc.client.SimpleIRCClient):
     def check_pong(self):
         delta = time.time() - self.last_pong
         if self.connection.is_connected() and abs(delta) > self.ping_interval * 2:
-            self.disconnect("No PONG from server")
+            self.connection.disconnect("No PONG from server")
 
     def broadcast(self, msg):
         if self.connection.is_connected():
