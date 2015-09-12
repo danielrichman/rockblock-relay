@@ -61,7 +61,7 @@ class Bot(irc.client.SimpleIRCClient):
         self.connection.execute_every(self.ping_interval / 10, self.check_pong)
         super(Bot, self).start()
 
-    def on_pong(self):
+    def on_pong(self, arg1, arg2):
         self.last_pong = time.time()
 
     def check_pong(self):
