@@ -1,3 +1,4 @@
+import time
 import threading
 import traceback
 
@@ -21,6 +22,8 @@ class Bot(irc.client.SimpleIRCClient):
         self.reconnection_interval = 60
         self.nickname = nickname
         self.channel = channel
+        self.ping_interval = 300
+        self.last_pong = time.time()
 
     def reconnect(self):
         if not self.connection.is_connected():
@@ -54,7 +57,17 @@ class Bot(irc.client.SimpleIRCClient):
 
     def start(self):
         self.reconnect()
+        self.connection.set_keepalive(self.ping_interval)
+        self.connection.execute_every(self.ping_interval / 10, self.check_pong)
         super(Bot, self).start()
+
+    def on_pong(self):
+        self.last_pong = time.time()
+
+    def check_pong(self):
+        delta = time.time() - self.last_pong
+        if self.connection.is_connected() and abs(delta) > self.ping_interval * 2:
+            self.disconnect("No PONG from server")
 
     def broadcast(self, msg):
         if self.connection.is_connected():
