@@ -14,6 +14,7 @@ def load_config():
     with open(cfg_fn) as f:
         cfg = yaml.safe_load(f)
 
+    assert "email" in cfg
     setdefault(cfg, "imei", {})
     setdefault(cfg, "repeat", {})
     assert "imei_reverse" not in cfg

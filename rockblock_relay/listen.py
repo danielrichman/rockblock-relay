@@ -4,6 +4,8 @@ import psycopg2
 import traceback
 from psycopg2.extras import RealDictCursor
 
+from .util import send_mail
+
 def listen(callback):
     conn = psycopg2.connect(dbname='rockblock-relay')
     conn.autocommit = True
@@ -36,6 +38,7 @@ def listen(callback):
                 except:
                     print("Exception while handling", id, file=sys.stderr)
                     traceback.print_exc()
+                    send_mail("RockBLOCK callback error", traceback.format_exc())
             else:
                 print("Failed to get row", id, file=sys.stderr)
 
