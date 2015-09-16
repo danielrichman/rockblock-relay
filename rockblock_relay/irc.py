@@ -1,12 +1,15 @@
 import time
 import threading
 import traceback
+from datetime import datetime
+import logging as logging_module
 
 import irc.client
 
 from .config import config
-from .database import listen
-from . import util
+from . import util, database
+
+logger = logging_module.getLogger("rockblock_relay.irc")
 
 class Bot(irc.client.SimpleIRCClient):
     # Based on irc.bot, which is:
@@ -24,10 +27,11 @@ class Bot(irc.client.SimpleIRCClient):
         self.channel = channel
         self.ping_interval = 300
         self.last_pong = time.time()
-        self.pending_inserts = {}
+        self.whois_callbacks = {}
 
     def reconnect(self):
         if not self.connection.is_connected():
+            logger.info("reconnecting")
             # Queue up a retry
             self.connection.execute_delayed(self.reconnection_interval, self.reconnect)
 
@@ -40,13 +44,15 @@ class Bot(irc.client.SimpleIRCClient):
                 pass
 
     def on_connect(self, sock):
+        logger.info("connected")
         self.connection.execute_delayed(0, self.join)
 
     def join(self):
         self.connection.join(self.channel)
 
     def on_disconnect(self, c, e):
-        self.pending_inserts = {}
+        logger.error("disconnected, will reconnect soon")
+        self.whois_callbacks = {}
         self.connection.execute_delayed(self.reconnection_interval, self.reconnect)
 
     def get_version(self):
@@ -64,55 +70,89 @@ class Bot(irc.client.SimpleIRCClient):
         super(Bot, self).start()
 
     def on_pong(self, arg1, arg2):
+        logger.debug("received pong")
         self.last_pong = time.time()
 
     def check_pong(self):
         delta = time.time() - self.last_pong
         if self.connection.is_connected() and abs(delta) > self.ping_interval * 2:
+            logger.error("Pong timeout, disconnecting")
             self.connection.disconnect("No PONG from server")
 
     def broadcast(self, msg):
         if self.connection.is_connected():
+            logger.info("Broadcast %s", msg)
             self.connection.privmsg(self.channel, msg)
 
-    def on_privmsg(self, c, e):
+    def on_pubmsg(self, c, e):
         nick = e.source.nick
         message = e.arguments[0]
-        self.pending_inserts.setdefault(nick, []).append(message)
-        c.whois(nick)
+        prefix_required = self.nickname + ": push"
 
-    def on_whoischannels(self, c, e):
-        nick = e.arguments[1]
-        channels = set(e.arguments[2].split())
-        accept = {"+" + self.channel, "@" + self.channel}
-        authed = bool(channels & accept)
-
-        messages = self.pending_inserts.get(nick, [])
-        if not messages:
+        if not message.startswith(prefix_required):
             return
 
-        if authed:
-            for message in messages:
-                with database.connect() as conn:
-                    row = { 
-                        "source": "irc",
-                        "imei": None,
-                        "momsn": None,
-                        "transmitted": datetime.strptime(datetime.utcnow(), "%y-%m-%d %H:%M:%S"),
-                        "latitude": None,
-                        "longitude": None,
-                        "latlng_cep": None,
-                        "data": message
-                    }   
-                    database.insert(conn, row)
-            self.broadcast("Enqueued {} messages from {}".format(len(messages), nick))
+        message = message[len(prefix_required):].strip()
 
-        else:
-            self.broadcast("Dropped {} messages from {}: not authed (you need voice or op)"
-                           .format(len(messages), nick))
+        if not (1 <= len(message) <= 149):
+            logger.info("Refused push request from nick %s: bad length %s", nick, len(message))
+            self.broadcast("Push refused: bad message length")
+            return
 
-        del self.pending_inserts[nick]
+        row = { 
+            "source": "irc",
+            "imei": None,
+            "momsn": None,
+            "transmitted": datetime.utcnow(),
+            "latitude": None,
+            "longitude": None,
+            "latlng_cep": None,
+            "data": message
+        }   
 
+        def cb(state, channels):
+            logger.debug("push callback fired: %r %r", state, channels)
+
+            if hasattr(cb, "once"):
+                logger.error("CB: called twice")
+                return
+
+            cb.once = True
+
+            if state != "ok":
+                logger.error("Whois for %s failed", nick)
+                self.broadcast("Failed to whois {}".format(nick))
+                try:
+                    self.whois_callbacks.get(nick, []).remove(cb)
+                except ValueError:
+                    logger.error("in whois timeout, failed to remove whois cb")
+                else:
+                    logger.debug("in whois timeout, removed whois cb")
+                return
+
+            accept = {"+" + self.channel, "@" + self.channel}
+            authed = bool(channels & accept)
+
+            if not authed:
+                logger.error("Auth failure: %s, %r", nick, channels)
+                self.broadcast("{}: you need voice or op".format(nick))
+                return
+
+            logger.info("Push %s %r", nick, message)
+            self.broadcast("{}: enqueued".format(nick))
+            with database.connect() as conn:
+                database.insert(conn, row)
+
+        self.whois_callbacks.setdefault(nick, []).append(cb)
+        self.connection.execute_delayed(10, lambda: cb("timeout", None))
+        c.whois([nick])
+
+    def on_whoischannels(self, c, e):
+        nick = e.arguments[0]
+        callbacks = self.whois_callbacks.pop(nick, [])
+        logger.debug("on_whoischannels %s; running %s callbacks", nick, len(callbacks))
+        for cb in callbacks:
+            cb("ok", set(e.arguments[1].split()))
 
 def message_to_line(msg):
     source = msg["source"]
@@ -147,7 +187,7 @@ def main():
         bot.broadcast(message_to_line(msg))
 
     def listen2():
-        listen(cb)
+        database.listen(cb)
 
     Thread(target=bot.start, daemon=True).start()
     Thread(target=listen2, daemon=True).start()
@@ -158,4 +198,5 @@ def main():
         pass
 
 if __name__ == "__main__":
+    logging_module.basicConfig(level=logging_module.INFO)
     main()

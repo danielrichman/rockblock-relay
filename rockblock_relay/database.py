@@ -4,6 +4,7 @@ import psycopg2
 import traceback
 from psycopg2.extras import RealDictCursor
 
+from .config import config
 from .util import send_mail
 
 def connect():
