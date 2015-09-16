@@ -9,9 +9,6 @@ from .config import config, need_auth
 from .listen import listen
 
 ssl_context = ssl.create_default_context()
-# XXX TLSv1 connections seem to fail!
-ssl_context.options |= ssl.OP_NO_TLSv1
-ssl_context.options &= ~ssl.OP_NO_SSLv3
 
 class SubmitMessageError(Exception): pass
 
@@ -29,7 +26,7 @@ def push(target, data):
         "Content-type": "application/x-www-form-urlencoded",
         "Accept": "text/plain"
     }
-    conn = http.client.HTTPSConnection("secure.rock7mobile.com", 443, context=ssl_context)
+    conn = http.client.HTTPSConnection("secure.rock7.com", 443, context=ssl_context)
     conn.request("POST", "/rockblock/MT", body, headers)
     response = conn.getresponse().read()
     if not response.startswith(b"OK"):
