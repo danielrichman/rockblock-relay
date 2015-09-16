@@ -36,3 +36,4 @@ GRANT SELECT, UPDATE ON SEQUENCE "messages_id_seq" TO "www-data";
 -- ALTER TABLE messages ALTER latitude   DROP NOT NULL
 -- ALTER TABLE messages ALTER longitude  DROP NOT NULL
 -- ALTER TABLE messages ALTER latlng_cep DROP NOT NULL
+-- ALTER TABLE messages ALTER source     SET  NOT NULL
