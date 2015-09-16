@@ -24,6 +24,7 @@ class Bot(irc.client.SimpleIRCClient):
         self.channel = channel
         self.ping_interval = 300
         self.last_pong = time.time()
+        self.pending_inserts = {}
 
     def reconnect(self):
         if not self.connection.is_connected():
@@ -45,6 +46,7 @@ class Bot(irc.client.SimpleIRCClient):
         self.connection.join(self.channel)
 
     def on_disconnect(self, c, e):
+        self.pending_inserts = {}
         self.connection.execute_delayed(self.reconnection_interval, self.reconnect)
 
     def get_version(self):
@@ -72,6 +74,44 @@ class Bot(irc.client.SimpleIRCClient):
     def broadcast(self, msg):
         if self.connection.is_connected():
             self.connection.privmsg(self.channel, msg)
+
+    def on_privmsg(self, c, e):
+        nick = e.source.nick
+        message = e.arguments[0]
+        self.pending_inserts.setdefault(nick, []).append(message)
+        c.whois(nick)
+
+    def on_whoischannels(self, c, e):
+        nick = e.arguments[1]
+        channels = set(e.arguments[2].split())
+        accept = {"+" + self.channel, "@" + self.channel}
+        authed = bool(channels & accept)
+
+        messages = self.pending_inserts.get(nick, [])
+        if not messages:
+            return
+
+        if authed:
+            for message in messages:
+                with database.connect() as conn:
+                    row = { 
+                        "source": "irc",
+                        "imei": None,
+                        "momsn": None,
+                        "transmitted": datetime.strptime(datetime.utcnow(), "%y-%m-%d %H:%M:%S"),
+                        "latitude": None,
+                        "longitude": None,
+                        "latlng_cep": None,
+                        "data": message
+                    }   
+                    database.insert(conn, row)
+            self.broadcast("Enqueued {} messages from {}".format(len(messages), nick))
+
+        else:
+            self.broadcast("Dropped {} messages from {}: not authed (you need voice or op)"
+                           .format(len(messages), nick))
+
+        del self.pending_inserts[nick]
 
 
 def message_to_line(msg):

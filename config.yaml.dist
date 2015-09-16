@@ -6,6 +6,8 @@ imei:
 repeat:
     rocket:
       - mission_control
+    irc:
+      - mission_control
 irc:
     host: irc.host
     port: 6667

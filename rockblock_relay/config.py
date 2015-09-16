@@ -6,8 +6,15 @@ def setdefault(d, k, v):
     if d[k] is None:
         d[k] = v
 
+# I'm quite sad about this special case. It would be nice for
+# the repeating to be more general, i.e., have something like
+#  type endpoint = Rockblock of imei | IRC | Email
+#  val route : endpoint -> endpoint list
+# But that's for version two perhaps.
+# The worst bit is that it's extremely non-obvious what's going
+# on without reading the source.
 def is_legal_source(cfg, s):
-    return s in cfg["imei"]
+    return s == "irc" or s in cfg["imei"]
 
 def is_legal_repeat_target(cfg, s):
     return s in cfg["imei"]
