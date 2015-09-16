@@ -1,16 +1,12 @@
 from .config import config, need_auth
-from .listen import listen
+from .database import listen
 from .push import push
 
 def callback(message):
     if message["data"] == b"":
         return
 
-    source = message["imei"]
-    if source not in config["imei_reverse"]:
-        return
-
-    source = config["imei_reverse"][source]
+    source = message["source"]
     targets = config["repeat"].get(source, [])
 
     for target in targets:

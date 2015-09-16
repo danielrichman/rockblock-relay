@@ -20,7 +20,7 @@
         {% for message in messages %}
         <tr>
             <td rowspan='2' class='id'>{{ message.id }}</td>
-            <td>{{ message.imei|source_name }}</td>
+            <td>{{ message.source }}</td>
             <td>{{ message.momsn }}</td>
             <td>{{ message.transmitted }}</td>
             <td>{{ message.latitude }}</td>

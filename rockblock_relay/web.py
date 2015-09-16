@@ -10,7 +10,7 @@ from psycopg2.extras import RealDictCursor
 import raven.flask_glue
 
 from .config import config
-from . import util
+from . import util, database
 
 
 app = Flask(__name__)
@@ -21,11 +21,8 @@ auth_decorator = raven.flask_glue.AuthDecorator(desc="RockBLOCK Relay")
 def connection():
     assert flask.has_request_context()
     if not hasattr(g, '_database'):
-        g._database = psycopg2.connect(dbname=config["database"])
+        g._database = database.connect()
     return g._database
-
-def cursor():
-    return connection().cursor(cursor_factory=RealDictCursor)
 
 @app.teardown_appcontext
 def close_db_connection(exception):
@@ -38,15 +35,11 @@ def close_db_connection(exception):
 
 app.jinja_env.filters["plain_or_hex"] = util.plain_or_hex
 
-@app.template_filter('source_name')
-def source_name(imei):
-    return config["imei_reverse"].get(imei, imei)
-
 
 @app.route('/')
 @auth_decorator
 def list():
-    with cursor() as cur:
+    with database.cursor(connection()) as cur:
         cur.execute("SELECT * FROM messages ORDER BY id")
         messages = cur.fetchall()
 
@@ -54,15 +47,8 @@ def list():
 
 @app.route('/rockblock-incoming', methods=["POST"])
 def rockblock_incoming():
-    query = """
-    INSERT INTO messages
-    (imei, momsn, transmitted, latitude, longitude, latlng_cep, data)
-    VALUES
-    (%(imei)s, %(momsn)s, %(transmitted)s, %(latitude)s, %(longitude)s,
-     %(latlng_cep)s, %(data)s)
-    """
-
-    args = {
+    message = {
+        "source": config["imei_reverse"].get("unknown-rockblock"),
         "imei": int(request.form["imei"]),
         "momsn": int(request.form["momsn"]),
         "transmitted": datetime.strptime(request.form["transmit_time"], "%y-%m-%d %H:%M:%S"),
@@ -72,8 +58,7 @@ def rockblock_incoming():
         "data": base64.b16decode(request.form["data"].upper())
     }
 
-    with cursor() as cur:
-        cur.execute(query, args)
+    database.insert(connection(), message)
 
     return "OK"
 

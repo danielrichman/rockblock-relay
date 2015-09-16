@@ -6,7 +6,6 @@ import http.client
 import ssl
 
 from .config import config, need_auth
-from .listen import listen
 
 ssl_context = ssl.create_default_context()
 

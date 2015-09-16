@@ -5,7 +5,7 @@ import traceback
 import irc.client
 
 from .config import config
-from .listen import listen
+from .database import listen
 from . import util
 
 class Bot(irc.client.SimpleIRCClient):
@@ -75,9 +75,12 @@ class Bot(irc.client.SimpleIRCClient):
 
 
 def message_to_line(msg):
-    source = config["imei_reverse"].get(msg["imei"], "unknown")
+    source = msg["source"]
     data = util.plain_or_hex(msg["data"])
-    return '{0} @ ~{1},{2}: {3}'.format(source, msg["latitude"], msg["longitude"], data)
+    if msg["latitude"] or msg["longitude"]:
+        return '{0} @ ~{1},{2}: {3}'.format(source, msg["latitude"], msg["longitude"], data)
+    else:
+        return '{0}: {1}'.format(source, data)
 
 
 kill_everything = threading.Event()

@@ -1,12 +1,12 @@
 from .util import plain_or_hex, send_mail
 from .config import config
-from .listen import listen
+from .database import listen
 
 def callback(msg):
     if msg["data"] == b"":
         return
 
-    source = config["imei_reverse"].get(msg["imei"], "unknown")
+    source = msg["source"]
     data = plain_or_hex(msg["data"])
     body = "\n".join(["RockBLOCK", source, data])
 

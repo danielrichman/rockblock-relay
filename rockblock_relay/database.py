@@ -6,11 +6,17 @@ from psycopg2.extras import RealDictCursor
 
 from .util import send_mail
 
+def connect():
+    return psycopg2.connect(dbname=config["database"])
+
+def cursor(conn):
+    return conn.cursor(cursor_factory=RealDictCursor)
+
 def listen(callback):
-    conn = psycopg2.connect(dbname='rockblock-relay')
+    conn = connect()
     conn.autocommit = True
 
-    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur = cursor(conn)
     cur.execute('LISTEN "messages_insert";')
 
     while True:
@@ -42,6 +48,17 @@ def listen(callback):
             else:
                 print("Failed to get row", id, file=sys.stderr)
 
+def insert(conn, message):
+    query = """
+    INSERT INTO messages
+    (source, imei, momsn, transmitted, latitude, longitude, latlng_cep, data)
+    VALUES
+    (%(source)s, %(imei)s, %(momsn)s, %(transmitted)s, %(latitude)s,
+     %(longitude)s, %(latlng_cep)s, %(data)s)
+    """
+
+    with cursor(conn) as cur:
+        cur.execute(query, message)
 
 def main():
     listen(print)

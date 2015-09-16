@@ -6,6 +6,12 @@ def setdefault(d, k, v):
     if d[k] is None:
         d[k] = v
 
+def is_legal_source(cfg, s):
+    return s in cfg["imei"]
+
+def is_legal_repeat_target(cfg, s):
+    return s in cfg["imei"]
+
 def load_config():
     base = os.path.join(os.path.dirname(__file__), "..")
     cfg_fn = os.path.join(base, "config.yaml")
@@ -30,9 +36,9 @@ def load_config():
     imei = cfg["imei"]
 
     for key, targets in cfg["repeat"].items():
-        assert key in imei
+        assert is_legal_source(cfg, key)
         for target in targets:
-            assert target in imei
+            assert is_legal_repeat_target(cfg, target)
 
     try:
         with open(auth_fn) as f:
