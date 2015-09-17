@@ -1,7 +1,11 @@
+import logging as logging_module
+
 from .config import config, need_auth
 from .database import listen
 from .push import push
 from . import util
+
+logger = logging_module.getLogger("rockblock_relay.repeat")
 
 def callback(message):
     if message["data"] == b"":

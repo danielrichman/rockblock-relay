@@ -1,6 +1,8 @@
 import time
 import threading
 import traceback
+import base64
+import binascii
 from datetime import datetime
 import logging as logging_module
 
@@ -87,12 +89,33 @@ class Bot(irc.client.SimpleIRCClient):
     def on_pubmsg(self, c, e):
         nick = e.source.nick
         message = e.arguments[0]
-        prefix_required = self.nickname + ": push"
+        binary_prefix = self.nickname + ": binary "
+        ascii_prefix = self.nickname + ": push "
 
-        if not message.startswith(prefix_required):
+        if message.startswith(binary_prefix):
+            message = message[len(binary_prefix):].strip().upper()
+            try:
+                message = base64.b16decode(message)
+            except binascii.Error:
+                logger.info("Refused binary from nick %s: invalid b16", nick)
+                self.broadcast("Invalid b16 data")
+                return
+
+        elif message.startswith(ascii_prefix):
+            message = message[len(ascii_prefix):].strip()
+            try:
+                message = message.encode("ascii")
+                if not util.is_printable(message):
+                    raise ValueError
+            except (UnicodeEncodeError, ValueError):
+                logger.info("Refused push from nick %s: non-ascii", nick)
+                self.broadcast("Non ascii characters: consider using binary mode.")
+                return
+
+        else:
             return
 
-        message = message[len(prefix_required):].strip()
+        assert isinstance(message, bytes)
 
         if not (1 <= len(message) <= 149):
             logger.info("Refused push request from nick %s: bad length %s", nick, len(message))

@@ -10,6 +10,9 @@ from .config import config
 
 printable_re = re.compile(b"^[\\x20-\\x7E]+$")
 
+def is_printable(s):
+    return printable_re.match(s)
+
 def plain_or_hex(s):
     if printable_re.match(s):
         return bytes(s).decode("ascii")
