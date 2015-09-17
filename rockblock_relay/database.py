@@ -15,7 +15,7 @@ def cursor(conn):
     return conn.cursor(cursor_factory=RealDictCursor)
 
 def listen(callback):
-    logger = logging_module.getLogger("database.listen")
+    logger = logging_module.getLogger("rockblock_relay.database.listen")
 
     conn = connect()
     conn.autocommit = True
@@ -52,7 +52,7 @@ def listen(callback):
                 logger.error("Failed to get row %s", id)
 
 def insert(conn, message):
-    logger = logging_module.getLogger("database")
+    logger = logging_module.getLogger("rockblock_relay.database")
     logger.info("insert %r", message)
 
     query = """

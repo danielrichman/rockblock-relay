@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 import base64
+import logging as logging_module
 
 import flask
 import psycopg2
@@ -17,6 +18,9 @@ app = Flask(__name__)
 app.secret_key = os.urandom(16)
 auth_decorator = raven.flask_glue.AuthDecorator(desc="RockBLOCK Relay")
 
+app.before_first_request(util.setup_logging)
+
+logger = logging_module.getLogger("rockblock_relay.web")
 
 def connection():
     assert flask.has_request_context()

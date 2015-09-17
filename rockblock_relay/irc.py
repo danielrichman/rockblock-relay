@@ -139,7 +139,7 @@ class Bot(irc.client.SimpleIRCClient):
                 self.broadcast("{}: you need voice or op".format(nick))
                 return
 
-            logger.info("Push %s %r", nick, message)
+            logger.info("Push %s %s", nick, util.plain_or_hex(message))
             self.broadcast("{}: enqueued".format(nick))
             with database.connect() as conn:
                 database.insert(conn, row)
