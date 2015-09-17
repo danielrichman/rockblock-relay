@@ -114,7 +114,7 @@ class Bot(irc.client.SimpleIRCClient):
             logger.debug("push callback fired: %r %r", state, channels)
 
             if hasattr(cb, "once"):
-                logger.error("CB: called twice")
+                logger.info("CB: called twice (very slow whois?)")
                 return
 
             cb.once = True
@@ -134,7 +134,7 @@ class Bot(irc.client.SimpleIRCClient):
             authed = bool(channels & accept)
 
             if not authed:
-                logger.error("Auth failure: %s, %r", nick, channels)
+                logger.info("Auth failure: %s, %r", nick, channels)
                 self.broadcast("{}: you need voice or op".format(nick))
                 return
 
@@ -170,14 +170,16 @@ class Thread(threading.Thread):
         try:
             super(Thread, self).run()
         except:
-            traceback.print_exc()
+            logger.exception("Thread: uncaught exception")
         else:
-            print("Clean exit", file=sys.stderr)
+            logger.exception("Clean thread exit?")
         finally:
             kill_everything.set()
 
 
 def main():
+    util.setup_logging()
+
     bot = Bot(**config["irc"])
 
     def cb(msg):
@@ -198,5 +200,4 @@ def main():
         pass
 
 if __name__ == "__main__":
-    logging_module.basicConfig(level=logging_module.INFO)
     main()

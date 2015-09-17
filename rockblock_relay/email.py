@@ -1,4 +1,4 @@
-from .util import plain_or_hex, send_mail
+from .util import plain_or_hex, send_mail, setup_logging
 from .config import config
 from .database import listen
 
@@ -13,6 +13,7 @@ def callback(msg):
     send_mail("RockBLOCK message", body)
 
 def main():
+    setup_logging()
     listen(callback)
 
 if __name__ == "__main__":

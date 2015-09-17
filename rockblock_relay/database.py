@@ -2,10 +2,11 @@ import sys
 import select
 import psycopg2
 import traceback
+import logging as logging_module
 from psycopg2.extras import RealDictCursor
 
 from .config import config
-from .util import send_mail
+from . import util
 
 def connect():
     return psycopg2.connect(dbname=config["database"])
@@ -14,6 +15,8 @@ def cursor(conn):
     return conn.cursor(cursor_factory=RealDictCursor)
 
 def listen(callback):
+    logger = logging_module.getLogger("database.listen")
+
     conn = connect()
     conn.autocommit = True
 
@@ -34,6 +37,7 @@ def listen(callback):
 
             cur.execute("SELECT * FROM messages WHERE id = %s", (id, ))
             row = cur.fetchone()
+            logger.info("Handling %r", row)
 
             if row is not None:
                 try:
@@ -43,13 +47,14 @@ def listen(callback):
                 except SystemExit:
                     raise
                 except:
-                    print("Exception while handling", id, file=sys.stderr)
-                    traceback.print_exc()
-                    send_mail("RockBLOCK callback error", traceback.format_exc())
+                    logger.exception("Exception while handling %s", id)
             else:
-                print("Failed to get row", id, file=sys.stderr)
+                logger.error("Failed to get row %s", id)
 
 def insert(conn, message):
+    logger = logging_module.getLogger("database")
+    logger.info("insert %r", message)
+
     query = """
     INSERT INTO messages
     (source, imei, momsn, transmitted, latitude, longitude, latlng_cep, data)
@@ -62,6 +67,7 @@ def insert(conn, message):
         cur.execute(query, message)
 
 def main():
+    setup_logging()
     listen(print)
 
 if __name__ == "__main__":

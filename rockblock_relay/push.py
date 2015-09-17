@@ -6,6 +6,7 @@ import http.client
 import ssl
 
 from .config import config, need_auth
+from . import util
 
 ssl_context = ssl.create_default_context()
 
@@ -41,6 +42,7 @@ parser.add_argument('-x', '--hex', dest='hex', action='store_true', default=Fals
 parser.add_argument('data', metavar='DATA')
 
 def main():
+    util.setup_logging()
     need_auth()
 
     args = parser.parse_args()

@@ -47,6 +47,8 @@ def list():
 
 @app.route('/rockblock-incoming', methods=["POST"])
 def rockblock_incoming():
+    logger.info("Incoming message: %r", request.form)
+
     message = {
         "source": config["imei_reverse"].get("unknown-rockblock"),
         "imei": int(request.form["imei"]),
@@ -63,4 +65,5 @@ def rockblock_incoming():
     return "OK"
 
 if __name__ == '__main__':
+    util.setup_logging()
     app.run(debug=True, use_reloader=False)
