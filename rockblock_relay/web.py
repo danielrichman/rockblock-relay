@@ -49,9 +49,10 @@ def list():
 def rockblock_incoming():
     logger.info("Incoming message: %r", request.form)
 
+    imei = int(request.form["imei"])
     message = {
-        "source": config["imei_reverse"].get("unknown-rockblock"),
-        "imei": int(request.form["imei"]),
+        "source": config["imei_reverse"].get(imei, "unknown-rockblock"),
+        "imei": imei,
         "momsn": int(request.form["momsn"]),
         "transmitted": datetime.strptime(request.form["transmit_time"], "%y-%m-%d %H:%M:%S"),
         "latitude": float(request.form["iridium_latitude"]),
