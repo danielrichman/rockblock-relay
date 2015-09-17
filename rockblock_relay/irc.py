@@ -179,6 +179,7 @@ class Thread(threading.Thread):
 
 def main():
     util.setup_logging()
+    logging_module.getLogger("irc").setLevel(logging_module.INFO)
 
     bot = Bot(**config["irc"])
 
