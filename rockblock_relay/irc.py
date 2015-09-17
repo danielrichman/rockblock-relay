@@ -114,7 +114,8 @@ class Bot(irc.client.SimpleIRCClient):
             logger.debug("push callback fired: %r %r", state, channels)
 
             if hasattr(cb, "once"):
-                logger.info("CB: called twice (very slow whois?)")
+                # this is not an error
+                logger.debug("CB: second call")
                 return
 
             cb.once = True
