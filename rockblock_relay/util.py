@@ -25,11 +25,11 @@ def send_mail(subject, body):
 
     message = email.mime.text.MIMEText(body)
     message["From"] = from_
-    message["To"] = to
+    message["To"] = ", ".join(to)
     message["Subject"] = subject
 
     s = smtplib.SMTP('localhost')
-    s.sendmail(from_, [to], message.as_string())
+    s.sendmail(from_, to, message.as_string())
     s.quit()
 
 _format_email = \
@@ -60,7 +60,7 @@ def setup_logging():
     from_ = "rockblock@magpie.cusf.co.uk"
 
     handler = logging.handlers.SMTPHandler(
-            "localhost", from_, [to], "RockBLOCK logger")
+            "localhost", from_, to, "RockBLOCK logger")
     handler.setLevel(logging.ERROR)
     handler.setFormatter(logging.Formatter(_format_email))
     root_logger.addHandler(handler)
