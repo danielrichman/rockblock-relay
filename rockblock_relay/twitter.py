@@ -15,6 +15,8 @@ def callback(msg):
     if not message.startswith(prefix):
         return
 
+    message = message[len(prefix):]
+
     if msg["source"] == "irc":
         logger.error("Tweet rejected: not a rockblock")
         return
