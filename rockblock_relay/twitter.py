@@ -24,7 +24,7 @@ def callback(msg):
         return
 
     message = message.decode("ascii")
-    args = {"status": "(satmodem) " + message}
+    args = {"status": message}
     if msg["latitude"] is not None and msg["longitude"] is not None:
         args["lat"] = msg["latitude"]
         args["lon"] = msg["longitude"]
