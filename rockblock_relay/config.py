@@ -52,7 +52,7 @@ def load_config():
             auth = yaml.safe_load(f)
 
         for key in auth:
-            assert key in imei
+            assert key in imei or key == "twitter"
 
         cfg["auth"] = auth
         auth_error = None

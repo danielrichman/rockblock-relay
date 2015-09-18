@@ -4,3 +4,4 @@ python-raven
 PyYAML
 irc
 uwsgi
+tweepy
