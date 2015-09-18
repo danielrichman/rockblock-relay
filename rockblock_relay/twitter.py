@@ -1,5 +1,7 @@
 import logging as logging_module
 
+import tweepy
+
 from .util import is_printable, setup_logging
 from .config import config, need_auth
 from .database import listen
@@ -7,8 +9,8 @@ from .database import listen
 logger = logging_module.getLogger("rockblock_relay.twitter")
 
 def callback(msg):
-    prefix = "tweet "
-    message = msg["data"]
+    prefix = b"tweet "
+    message = bytes(msg["data"])
 
     if not message.startswith(prefix):
         return
@@ -23,7 +25,7 @@ def callback(msg):
 
     message = message.decode("ascii")
     args = {"status": "(satmodem) " + message}
-    if msg["latitude"] is not None and msg["longitude" is not None:
+    if msg["latitude"] is not None and msg["longitude"] is not None:
         args["lat"] = msg["latitude"]
         args["lon"] = msg["longitude"]
         args["display_coordinates"] = True
