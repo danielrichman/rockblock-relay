@@ -181,6 +181,8 @@ class Bot(irc.client.SimpleIRCClient):
 def message_to_line(msg):
     source = msg["source"]
     data = util.plain_or_hex(msg["data"])
+    if data == "":
+        data = "<zero byte message / ack>"
     if msg["latitude"] or msg["longitude"]:
         return '{0} @ ~{1},{2}: {3}'.format(source, msg["latitude"], msg["longitude"], data)
     else:
@@ -208,9 +210,7 @@ def main():
     bot = Bot(**config["irc"])
 
     def cb(msg):
-        if msg["data"] == b"":
-            return
-
+        # we do _not_ filter empty messages here.
         bot.broadcast(message_to_line(msg))
 
     def listen2():
