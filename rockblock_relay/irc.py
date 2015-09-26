@@ -84,7 +84,8 @@ class Bot(irc.client.SimpleIRCClient):
     def broadcast(self, msg):
         if self.connection.is_connected():
             logger.info("Broadcast %s", msg)
-            self.connection.privmsg(self.channel, msg)
+            for line in msg.splitlines():
+                self.connection.privmsg(self.channel, line)
 
     def on_pubmsg(self, c, e):
         nick = e.source.nick
