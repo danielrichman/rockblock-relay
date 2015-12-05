@@ -47,13 +47,14 @@ class Bot(irc.client.SimpleIRCClient):
 
     def on_connect(self, sock):
         logger.info("connected")
+        self.last_pong = time.time()
         self.connection.execute_delayed(0, self.join)
 
     def join(self):
         self.connection.join(self.channel)
 
     def on_disconnect(self, c, e):
-        logger.error("disconnected, will reconnect soon")
+        logger.info("disconnected, will reconnect soon")
         self.whois_callbacks = {}
         self.connection.execute_delayed(self.reconnection_interval, self.reconnect)
 
@@ -67,9 +68,15 @@ class Bot(irc.client.SimpleIRCClient):
 
     def start(self):
         self.reconnect()
-        self.connection.set_keepalive(self.ping_interval)
+        self.connection.execute_every(self.ping_interval, self.send_ping)
         self.connection.execute_every(self.ping_interval / 10, self.check_pong)
         super(Bot, self).start()
+
+    def send_ping(self):
+        try:
+            self.connection.ping("keep-alive")
+        except irc.client.ServerNotConnectedError:
+            pass
 
     def on_pong(self, arg1, arg2):
         logger.debug("received pong")
@@ -78,7 +85,7 @@ class Bot(irc.client.SimpleIRCClient):
     def check_pong(self):
         delta = time.time() - self.last_pong
         if self.connection.is_connected() and abs(delta) > self.ping_interval * 2:
-            logger.error("Pong timeout, disconnecting")
+            logger.info("Pong timeout, disconnecting")
             self.connection.disconnect("No PONG from server")
 
     def broadcast(self, msg):
