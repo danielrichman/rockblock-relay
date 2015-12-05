@@ -24,10 +24,10 @@ class Bot(irc.client.SimpleIRCClient):
 
         self.host = host
         self.port = port
-        self.reconnection_interval = 60
+        self.reconnection_interval = 61
         self.nickname = nickname
         self.channel = channel
-        self.ping_interval = 300
+        self.ping_interval = 293
         self.last_pong = time.time()
         self.whois_callbacks = {}
 
@@ -69,7 +69,7 @@ class Bot(irc.client.SimpleIRCClient):
     def start(self):
         self.reconnect()
         self.connection.execute_every(self.ping_interval, self.send_ping)
-        self.connection.execute_every(self.ping_interval / 10, self.check_pong)
+        self.connection.execute_every(self.ping_interval * 0.101, self.check_pong)
         super(Bot, self).start()
 
     def send_ping(self):
@@ -77,6 +77,8 @@ class Bot(irc.client.SimpleIRCClient):
             self.connection.ping("keep-alive")
         except irc.client.ServerNotConnectedError:
             pass
+        else:
+            logger.debug("sent ping")
 
     def on_pong(self, arg1, arg2):
         logger.debug("received pong")
